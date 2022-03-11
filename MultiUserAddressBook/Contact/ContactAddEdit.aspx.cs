@@ -28,7 +28,7 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
         {
             #region Fill All Drop Down List
             FillCountryDropDownList();
-            FillContactCategoryDropDownList();
+            FillCBLContactCategoryID();
             #endregion Fill All Drop Down List
 
             if (Request.QueryString["ContactID"] != null)
@@ -76,20 +76,6 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
             Directory.CreateDirectory(Server.MapPath("~/MultiUserAddressBook/UserContent/"));
         }
         #endregion File Content
-        //String ContactPhotoPath = "";
-        //if (fuContactPhotoPath.HasFile)
-        //{
-        //    ContactPhotoPath = "~/MultiUserAddressBook/UserContent/" + fuContactPhotoPath.FileName.ToString().Trim();
-        //    fuContactPhotoPath.SaveAs(Server.MapPath(ContactPhotoPath));
-
-        //    //string[] filesPath = Directory.GetFiles(Server.MapPath("~/txtPath/"));
-        //    //foreach (string path in filesPath)
-        //    //{
-        //    //    FileInfo fi = new FileInfo(Server.MapPath(path));  //This Is Worng
-        //    //    string LastAcceTime = fi.LastWriteTime;             //Return 1/1/1601 
-        //    //}
-
-        //}
 
         #region Local Variables
         SqlConnection objConn = new SqlConnection(ConfigurationManager.ConnectionStrings["MultiUserAddressBookConnectionString"].ConnectionString.Trim());
@@ -107,9 +93,6 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
         SqlString strBloodGroup = SqlString.Null;
         SqlString strFacebookID = SqlString.Null;
         SqlString strLinkedINID = SqlString.Null;
-        //SqlString strContactPhotoPath = SqlString.Null;
-
-        //SqlString strPhotoHeight = SqlString.Null;
         SqlString strOldAttribute = SqlString.Null;
         string LogicalPath = "~/MultiUserAddressBook/UserContent/" + DateTime.Now.ToString("ddMMyyyyhhmmssffftt");
         string AbsolutePath = "";
@@ -131,7 +114,7 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
             if (ddlCityID.SelectedIndex == 0)
                 strErrorMessage += "-Select City <br/>";
 
-            if (ddlContactCategoryID.SelectedIndex == 0)
+            if (cblContactCategoryID.SelectedIndex == 0)   // aya pan change karel che
                 strErrorMessage += "-Select ContactCategory <br/>";
 
             if (txtContactName.Text.Trim() == "")
@@ -145,21 +128,6 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
 
             if (txtAddress.Text.Trim() == "")
                 strErrorMessage += "- Enter Address <br/>";
-
-            //if (txtContactPhotoPath.Text.Trim() == "")
-            //    strErrorMessage += "- Enter Contact Photo  <br/>";
-
-            //if (txtPhotoHeight.Text.Trim() == "")
-            //    strErrorMessage += "- Enter Photo Height <br/>";
-
-            //if (txtPhotoSize.Text.Trim() == "")
-            //    strErrorMessage += "Enter Photo Size <br/>";
-
-            //if (txtPhotoType.Text.Trim() == "")
-            //    strErrorMessage += "Enter Photo Type <br/>";
-
-            //if (txtPhotoWidth.Text.Trim() == "")
-            //    strErrorMessage += "Enter Photo Width <br/>";
 
             if (strErrorMessage != "")
             {
@@ -180,8 +148,8 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
             if (ddlCityID.SelectedIndex > 0)
                 strCityID = Convert.ToInt32(ddlCityID.SelectedValue);
 
-            if (ddlContactCategoryID.SelectedIndex > 0)
-                strContactCategoryID = Convert.ToInt32(ddlContactCategoryID.SelectedValue);
+            if (cblContactCategoryID.SelectedIndex > 0)  // aya pan change karel che
+                strContactCategoryID = Convert.ToInt32(cblContactCategoryID.SelectedValue);   // aya pan change karel che
 
             if (txtContactName.Text.Trim() != "")
                 strContactName = txtContactName.Text.Trim();
@@ -212,9 +180,6 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
 
             if (txtLinkedINID.Text.Trim() != "")
                 strLinkedINID = txtLinkedINID.Text.Trim();
-             
-            //if(txtContactPhotoPath.Text.Trim() != "")
-            //    strContactPhotoPath = txtContactPhotoPath.Text.Trim();
 
             if (fuFileContactPhotoPath.HasFile)
             {
@@ -253,17 +218,10 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
             objCmd.Parameters.AddWithValue("@FacebookID", strFacebookID);
             objCmd.Parameters.AddWithValue("@UserID", strUserID);
             objCmd.Parameters.AddWithValue("@LinkedINID", strLinkedINID);
-            //objCmd.Parameters.AddWithValue("@PhotoSize", strPhotoSize);
-            //objCmd.Parameters.AddWithValue("@PhotoType" , strPhotoType);
-            //objCmd.Parameters.AddWithValue("@PhotoWidth", strPhotoWidth);
-            //objCmd.Parameters.AddWithValue("@PhotoHeight", strPhotoHeight);
-            //objCmd.Parameters.AddWithValue("@ContactPhotoPath", strContactPhotoPath);
 
-            //objCmd.Parameters.AddWithValue("@ContactPhotoPath", ContactPhotoPath);
-            //objCmd.Parameters.AddWithValue("@PhotoAttribute", Attribute);
-           
             #endregion Set Connection & Command Object
 
+            #region Edit Mode
             if (Request.QueryString["ContactID"] != null)
             {
                 #region Update Record
@@ -294,6 +252,9 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
                 Response.Redirect("~/MultiUserAddressBook/Contact/ContactList.aspx", true);
                 #endregion Update Record
             }
+            #endregion Edit Mode
+
+            #region Add Mode
             else
             {
                 //Add mode
@@ -306,15 +267,23 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
                     objCmd.CommandText = "[dbo].[PR_Contact_Insert]";
                     objCmd.Parameters.AddWithValue("ContactPhotoPath", LogicalPath + fuFileContactPhotoPath.FileName);
                     objCmd.Parameters.AddWithValue("@PhotoAttribute", Attribute);
+
+                    objCmd.Parameters.Add("@ContactID",SqlDbType.Int, 4).Direction = ParameterDirection.Output; ; // a both line change kari che
+                    //objCmd.Parameters["@ContactID"].Direction = ParameterDirection.Output; // a both line change kari che
+
                     objCmd.ExecuteNonQuery();
                     #region Save Image to Directory
                     fuFileContactPhotoPath.SaveAs(AbsolutePath + fuFileContactPhotoPath.FileName);
                     #endregion Save Image to Directory
+
+                    SqlInt32 ContactID = 0;  // aya pan change karel che
+                    ContactID = Convert.ToInt32(objCmd.Parameters["@ContactID"].Value);  // aya pan change karel che
+
                     Response.Redirect("~/MultiUserAddressBook/Contact/ContactList.aspx", true);
                     ddlCountryID.SelectedIndex = 0;
                     ddlStateID.SelectedIndex = 0;
                     ddlCityID.SelectedIndex = 0;
-                    ddlContactCategoryID.SelectedIndex = 0;
+                    cblContactCategoryID.SelectedIndex = 0;
                     txtContactName.Text = "";
                     txtContactNo.Text = "";
                     txtWhatsAppNo.Text = "";
@@ -327,15 +296,17 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
                     txtLinkedINID.Text = "";
                     ddlCountryID.Focus();
 
-                    lblMessage.Text = "Data Inserted Successfully";
+                    lblMessage.Text = "Data Inserted Successfully with ContactID = "+ ContactID.ToString() ;
 
-                 }
+                }
                 if (strErrorMessage.Trim() != "")
                 {
                     lblMessage.Text = strErrorMessage;
                     return;
                 }
             }
+            #endregion Add Mode
+
             if (objConn.State == ConnectionState.Open)
                 objConn.Close();
         }
@@ -409,7 +380,7 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
             objCmd.CommandType = CommandType.StoredProcedure;
             objCmd.Parameters.AddWithValue("@CountryID", Convert.ToInt32(ddlCountryID.SelectedValue));
             objCmd.CommandText = "[dbo].[PR_City_StateDropdownList]";
-            
+
             SqlDataReader objSDR = objCmd.ExecuteReader();
             #endregion Set Connection & Command Object
 
@@ -481,49 +452,6 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
     }
     #endregion Fill Country DropDown List
 
-    #region Fill CountryCategory DropDown List
-    protected void FillContactCategoryDropDownList()
-    {
-        SqlConnection objConn = new SqlConnection(ConfigurationManager.ConnectionStrings["MultiUserAddressBookConnectionString"].ConnectionString.Trim());
-        try
-        {
-            #region Set Connection & Command Object
-            if (objConn.State != ConnectionState.Open)
-                objConn.Open();
-
-            SqlCommand objCmd = objConn.CreateCommand();
-            objCmd.CommandType = CommandType.StoredProcedure;
-            objCmd.CommandText = "[dbo].[PR_ContactCategory_SelectForDropDownList]";
-
-            if (Session["UserID"] != "")
-            {
-                objCmd.Parameters.AddWithValue("@UserID", Session["UserID"]);
-            }
-            SqlDataReader objSDR = objCmd.ExecuteReader();
-            #endregion Set Connection & Command Object
-
-            if (objSDR.HasRows == true)
-            {
-                ddlContactCategoryID.DataSource = objSDR;
-                ddlContactCategoryID.DataValueField = "ContactCategoryID";
-                ddlContactCategoryID.DataTextField = "ContactCategoryName";
-                ddlContactCategoryID.DataBind();
-            }
-            ddlContactCategoryID.Items.Insert(0, new ListItem("Select ContactCategory", "-1"));
-            if (objConn.State == ConnectionState.Open)
-                objConn.Close();
-        }
-        catch (Exception ex)
-        {
-            lblMessage.Text = ex.Message;
-        }
-        finally
-        {
-            if (objConn.State == ConnectionState.Open)
-                objConn.Close();
-        }
-    }
-    #endregion Fill Country DropDown List
 
     #region Button : Cancel
     protected void btnCancel_Click(object sender, EventArgs e)
@@ -544,13 +472,13 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
             #region Set Connection & Command Object
             if (objConn.State != ConnectionState.Open)
                 objConn.Open();
-   
+
 
             SqlCommand objCmd = objConn.CreateCommand();
             objCmd.CommandType = CommandType.StoredProcedure;
             objCmd.CommandText = "[dbo].[PR_Contact_SelectByUserIContactID]";
             objCmd.Parameters.AddWithValue("@ContactID", ContactID.ToString().Trim());
-           // objCmd.Parameters.AddWithValue("@UserID", strUserID.ToString());
+            // objCmd.Parameters.AddWithValue("@UserID", strUserID.ToString());
             #endregion Set Connection & Command Object
 
             #region Read the Value and set the controls
@@ -576,7 +504,7 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
                     }
                     if (objSDR["ContactCategoryID"].Equals(DBNull.Value) != true)
                     {
-                        ddlContactCategoryID.SelectedValue = objSDR["ContactCategoryID"].ToString().Trim();
+                        cblContactCategoryID.SelectedValue = objSDR["ContactCategoryID"].ToString().Trim();
                     }
                     if (objSDR["ContactName"].Equals(DBNull.Value) != true)
                     {
@@ -665,5 +593,94 @@ public partial class MultiUserAddressBook_Contact_ContactAddEdit : System.Web.UI
         FillCityDropDownList();
     }
     #endregion ddl StateID : SelectIndexChanged
+
+    #region FillCBLContactCategoryID
+    private void FillCBLContactCategoryID()  // aya akhu j  change karel che
+    {
+        SqlConnection objConn = new SqlConnection(ConfigurationManager.ConnectionStrings["MultiUserAddressBookConnectionString"].ConnectionString.Trim());
+        try
+        {
+            #region Set Connection & Command Object
+            if (objConn.State != ConnectionState.Open)
+                objConn.Open();
+
+            SqlCommand objCmd = objConn.CreateCommand();
+            objCmd.CommandType = CommandType.StoredProcedure;
+            objCmd.CommandText = "[dbo].[PR_ContactCategory_SelectForDropDownList]";
+            #endregion Set Connection & Command Object
+
+            if (Session["UserID"] != "")
+            {
+                objCmd.Parameters.AddWithValue("@UserID", Session["UserID"]);
+            }
+            #region Read the Value and set the controls
+            SqlDataReader objSDR = objCmd.ExecuteReader();
+            if (objSDR.HasRows)
+            {
+                cblContactCategoryID.DataTextField = "ContactCategoryName";
+                cblContactCategoryID.DataValueField = "ContactCategoryID";
+                cblContactCategoryID.DataSource = objSDR;
+                cblContactCategoryID.DataBind();
+            }
+            if (objConn.State == ConnectionState.Open)
+                objConn.Close();
+            #endregion Read the Value and set the controls
+        }
+        catch (Exception ex)
+        {
+            lblMessage.Text = ex.Message;
+        }
+        finally
+        {
+            if (objConn.State == ConnectionState.Open)
+                objConn.Close();
+        }
+    }
+    #endregion FillCBLContactCategoryID
+
+    //#region Fill CountryCategory DropDown List
+    //protected void FillContactCategoryDropDownList()
+    //{
+    //    SqlConnection objConn = new SqlConnection(ConfigurationManager.ConnectionStrings["MultiUserAddressBookConnectionString"].ConnectionString.Trim());
+    //    try
+    //    {
+    //        #region Set Connection & Command Object
+    //        if (objConn.State != ConnectionState.Open)
+    //            objConn.Open();
+
+    //        SqlCommand objCmd = objConn.CreateCommand();
+    //        objCmd.CommandType = CommandType.StoredProcedure;
+    //        objCmd.CommandText = "[dbo].[PR_ContactCategory_SelectForDropDownList]";
+
+    //        if (Session["UserID"] != "")
+    //        {
+    //            objCmd.Parameters.AddWithValue("@UserID", Session["UserID"]);
+    //        }
+    //        SqlDataReader objSDR = objCmd.ExecuteReader();
+    //        #endregion Set Connection & Command Object
+
+    //        if (objSDR.HasRows == true)
+    //        {
+    //            cblContactCategoryID.DataSource = objSDR;
+    //            cblContactCategoryID.DataValueField = "ContactCategoryID";
+    //            cblContactCategoryID.DataTextField = "ContactCategoryName";
+    //            cblContactCategoryID.DataBind();
+    //        }
+    //        ddlContactCategoryID.Items.Insert(0, new ListItem("Select ContactCategory", "-1"));
+    //        if (objConn.State == ConnectionState.Open)
+    //            objConn.Close();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        lblMessage.Text = ex.Message;
+    //    }
+    //    finally
+    //    {
+    //        if (objConn.State == ConnectionState.Open)
+    //            objConn.Close();
+    //    }
+    //}
+    //#endregion Fill Country DropDown List
+
 
 }
